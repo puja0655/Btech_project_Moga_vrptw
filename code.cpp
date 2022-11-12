@@ -3,7 +3,7 @@ using namespace std;
 
 #define Max_Capacity 200
 
-
+int Num_Customers;
 
 class Customer {
 public:
@@ -47,7 +47,7 @@ public:
 void take_input() {
     freopen("input_vrptw.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < Num_Customers; i++) {
         int cust_id;
         float x_coord, y_coord, demand, ready_time, due_time, service_time;
         cin >> cust_id >> x_coord >> y_coord >> demand >> ready_time >> due_time >> service_time;
@@ -57,11 +57,11 @@ void take_input() {
     }
 }
 vector<vector<int>> Generate_initial_population() {
-    vector<int> init(100);
-    for (int i = 0; i < 100; i++) init[i] = i;
+    vector<int> init(Num_Customers);
+    for (int i = 0; i < Num_Customers; i++) init[i] = i;
     set<vector<int>> st;
     st.insert(init);
-    while (st.size() < 100) {
+    while (st.size() < Num_Customers) {
         random_shuffle(init.begin(), init.end());
         st.insert(init);
     }
@@ -79,7 +79,7 @@ Cost cost_function(vector<int> chromosome) {
     float time = 0, dist = 0, demand = 0;
 
     int num_vehicles = 1;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < Num_Customers; i++) {
 
         Customer gene = customers[chromosome[i]];
         if (demand + gene.demand <= Max_Capacity and (time + gene.service_time) <= gene.due_time) {
@@ -114,7 +114,7 @@ Cost cost_function(vector<int> chromosome) {
         }
     }
 
-    float fitness = 100 * num_vehicles + 0.001 * (dist);
+    float fitness = Num_Customers * num_vehicles + 0.001 * (dist);
     Cost cost(num_vehicles, dist, fitness);
 
     return cost;
@@ -122,12 +122,14 @@ Cost cost_function(vector<int> chromosome) {
 
 int main() {
 
+    Num_Customers = 25;
+
     take_input();
 
     vector<vector<int>> init_pop = Generate_initial_population();
 
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < Num_Customers; i++) {
         auto  cost = cost_function(init_pop[i]);
         cout << cost.num_vehicles << " " << cost.dist << " " << cost.fitness << endl;
     }
