@@ -172,6 +172,36 @@ Cost cost_function(vector<int> chromosome) {
     return cost;
 }
 
+vector<int> Mutation_util(vector<int> chromosome) {
+    random_device rd; // obtain a random number from hardware
+    mt19937 gen(rd()); // seed the generator
+    uniform_int_distribution<> distr(0, chromosome.size() - 2);
+    //parents
+
+    int rand_index = distr(gen);
+    auto child = chromosome;
+
+    swap(child[rand_index], child[rand_index + 1]);
+    return child;
+}
+
+void Mutation(vector<vector<int>> &population) {
+
+    random_device rd; // obtain a random number from hardware
+    mt19937 gen(rd()); // seed the generator
+    uniform_int_distribution<> distr(0, population.size() - 1);
+
+
+    int pop_10 = population.size() / 10;
+    unordered_set<int> st;
+    while (st.size() < pop_10) {
+        int rand_index = distr(gen);
+        if (st.count(rand_index)) continue;
+        st.insert(rand_index);
+        auto child = Mutation_util(population[rand_index]);
+        population.push_back(child);
+    }
+}
 void Crossover(vector<vector<int>>population) {
     cout << "population size: " << population.size() << endl;
     random_device rd; // obtain a random number from hardware
@@ -220,7 +250,7 @@ void Crossover(vector<vector<int>>population) {
 int main() {
 
     Num_Customers = 25;
-    Num_Chromosomes = 12;
+    Num_Chromosomes = 25;
 
     take_input();
 
@@ -235,10 +265,14 @@ int main() {
 
     auto rank = pareto_ranking(costs);
 
-    for (int i = 0; i < Num_Chromosomes; i++) {
-        cout << costs[i].first << " " << costs[i].second << " " << rank[i] << endl;
-    }
+    // for (int i = 0; i < Num_Chromosomes; i++) {
+    //     cout << costs[i].first << " " << costs[i].second << " " << rank[i] << endl;
+    // }
 
+    cout << "initial population " << init_pop.size() << endl;
+    Mutation(init_pop);
+
+    cout << "after mutation population " << init_pop.size() << endl;
     //Crossover(init_pop);
 
     // for (auto v : init_pop)
