@@ -4,6 +4,7 @@ using namespace std;
 #define Max_Capacity 200
 
 int Num_Customers;
+int Num_Chromosomes;
 
 class Customer {
 public:
@@ -37,7 +38,7 @@ public:
     vector<int>routes;
 
 
-    Cost(int num_vehicles, float dist, float fitness,vector<int>routes) {
+    Cost(int num_vehicles, float dist, float fitness, vector<int>routes) {
         this->num_vehicles = num_vehicles;
         this->dist = dist;
         this->fitness = fitness;
@@ -63,7 +64,7 @@ vector<vector<int>> Generate_initial_population() {
     for (int i = 0; i < Num_Customers; i++) init[i] = i;
     set<vector<int>> st;
     st.insert(init);
-    while (st.size() < Num_Customers) {
+    while (st.size() < Num_Chromosomes) {
         random_shuffle(init.begin(), init.end());
         st.insert(init);
     }
@@ -74,6 +75,38 @@ vector<vector<int>> Generate_initial_population() {
     }
     random_shuffle(init_pop.begin(), init_pop.end());
     return init_pop;
+}
+
+vector<int> pareto_ranking(vector<pair<int, float>> costs) {
+    vector<int> rank(Num_Chromosomes, INT_MAX);
+    int r = 1;
+    while (1) {
+        bool all_done = true;
+        for (int i = 0; i < Num_Chromosomes; i++) {
+            if (rank[i] == INT_MAX) {
+                all_done = false;
+                bool flag = true;
+                // checking if i is non-dominated
+                for (int j = 0; j < Num_Chromosomes; j++) {
+                    if (rank[j] == INT_MAX) {
+                        if (costs[j].first <= costs[i].first and costs[j].second <= costs[i].second) {
+                            if (costs[j].first < costs[i].first or costs[j].second < costs[i].second) {
+                                flag = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (flag) rank[i] = r;
+            }
+
+        }
+        if (all_done) break;
+        r++;
+    }
+
+    return rank;
+
 }
 
 Cost cost_function(vector<int> chromosome) {
@@ -111,58 +144,75 @@ Cost cost_function(vector<int> chromosome) {
             prev_x = 35;
             prev_y = 35;
 
-
+            // adding dist of last customer in previous route to origin
             i--;
+
+            gene = customers[chromosome[i]];
+            float x = gene.x_coord;
+            float y = gene.y_coord;
+
+            float dist_bw = sqrt((prev_x - x) * (prev_x - x) + (prev_y - y) * (prev_y - y));
+            dist += dist_bw;
         }
     }
 
-    float fitness = Num_Customers * num_vehicles + 0.001 * (dist);
-    Cost cost(num_vehicles, dist, fitness,routes);
+    // adding dist of last customer to origin
+    prev_x = 35;
+    prev_y = 35;
+    Customer gene = customers[chromosome[customers.size() - 1]];
+    float x = gene.x_coord;
+    float y = gene.y_coord;
+
+    float dist_bw = sqrt((prev_x - x) * (prev_x - x) + (prev_y - y) * (prev_y - y));
+    dist += dist_bw;
+
+    float fitness = 100 * num_vehicles + 0.001 * (dist);
+    Cost cost(num_vehicles, dist, fitness, routes);
 
     return cost;
 }
 
-void Crossover(vector<vector<int>>population){
-    cout<<"population size: "<<population.size()<<endl;
-     random_device rd; // obtain a random number from hardware
-     mt19937 gen(rd()); // seed the generator
-     uniform_int_distribution<> distr(0, population.size()-1);
-     //parents
-     int father = distr(gen);
-     int mother = distr(gen);
-     while(father==mother) mother = distr(gen);
-     cout<<"random number " <<father<<" "<<mother<<endl;
+void Crossover(vector<vector<int>>population) {
+    cout << "population size: " << population.size() << endl;
+    random_device rd; // obtain a random number from hardware
+    mt19937 gen(rd()); // seed the generator
+    uniform_int_distribution<> distr(0, population.size() - 1);
+    //parents
+    int father = distr(gen);
+    int mother = distr(gen);
+    while (father == mother) mother = distr(gen);
+    cout << "random number " << father << " " << mother << endl;
 
-     Cost x = cost_function(population[father]);
-     Cost y = cost_function(population[mother]);
-     unordered_map<int,vector<int>>index_map;    // gene -> father index, mother index
-     for(int i=0;i<population[father].size();i++){
+    Cost x = cost_function(population[father]);
+    Cost y = cost_function(population[mother]);
+    unordered_map<int, vector<int>>index_map;   // gene -> father index, mother index
+    for (int i = 0; i < population[father].size(); i++) {
         index_map[population[father][i]].push_back(i);
-     }
-     for(int i=0;i<population[mother].size();i++){
+    }
+    for (int i = 0; i < population[mother].size(); i++) {
         index_map[population[mother][i]].push_back(i);
-     }
+    }
 
-     vector<int>delete_element[2];
+    vector<int>delete_element[2];
 
-     random_device rnd;
-     mt19937 genr(rnd());
-     uniform_int_distribution<> distri(0,population[father].size()-1);
-     int rf = distr(genr);
-     int rm = distr(genr);
-     //cout<<"random_device "<<rm<<" " <<rf;
+    random_device rnd;
+    mt19937 genr(rnd());
+    uniform_int_distribution<> distri(0, population[father].size() - 1);
+    int rf = distr(genr);
+    int rm = distr(genr);
+    //cout<<"random_device "<<rm<<" " <<rf;
 
-     //for(int i=0;i<)
-     
+    //for(int i=0;i<)
 
-     cout<<"population ";
-     for(int i=0;i<population[father].size();i++) cout<<population[father][i]<<" ";
-        cout<<endl;
-     vector<int>vec = x.routes;
-     cout<<"routes ";
-     for(int i=0;i<vec.size();i++) cout<<vec[i]<<" ";
-        cout<<endl;
-    cout<<"num_vehicles "<<x.num_vehicles<<endl;
+
+    cout << "population ";
+    for (int i = 0; i < population[father].size(); i++) cout << population[father][i] << " ";
+    cout << endl;
+    vector<int>vec = x.routes;
+    cout << "routes ";
+    for (int i = 0; i < vec.size(); i++) cout << vec[i] << " ";
+    cout << endl;
+    cout << "num_vehicles " << x.num_vehicles << endl;
 
 
 }
@@ -170,17 +220,26 @@ void Crossover(vector<vector<int>>population){
 int main() {
 
     Num_Customers = 25;
+    Num_Chromosomes = 12;
 
     take_input();
 
     vector<vector<int>> init_pop = Generate_initial_population();
 
-
-    for (int i = 0; i < Num_Customers; i++) {
+    vector<pair<int, float>> costs(Num_Chromosomes);
+    for (int i = 0; i < Num_Chromosomes; i++) {
         auto  cost = cost_function(init_pop[i]);
-        cout << cost.num_vehicles << " " << cost.dist << " " << cost.fitness << endl;
+        costs[i] = {cost.num_vehicles, cost.dist};
+        // cout << cost.num_vehicles << " " << cost.dist << " " << cost.fitness << endl;
     }
-    Crossover(init_pop);
+
+    auto rank = pareto_ranking(costs);
+
+    for (int i = 0; i < Num_Chromosomes; i++) {
+        cout << costs[i].first << " " << costs[i].second << " " << rank[i] << endl;
+    }
+
+    //Crossover(init_pop);
 
     // for (auto v : init_pop)
     // {
