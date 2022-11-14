@@ -34,12 +34,14 @@ public:
     int num_vehicles;
     float dist;
     float fitness;
+    vector<int>routes;
 
 
-    Cost(int num_vehicles, float dist, float fitness) {
+    Cost(int num_vehicles, float dist, float fitness,vector<int>routes) {
         this->num_vehicles = num_vehicles;
         this->dist = dist;
         this->fitness = fitness;
+        this->routes = routes;
     }
 
 };
@@ -77,13 +79,12 @@ vector<vector<int>> Generate_initial_population() {
 Cost cost_function(vector<int> chromosome) {
     float prev_x = 35, prev_y = 35;
     float time = 0, dist = 0, demand = 0;
-
+    vector<int>routes;
     int num_vehicles = 1;
     for (int i = 0; i < Num_Customers; i++) {
 
         Customer gene = customers[chromosome[i]];
         if (demand + gene.demand <= Max_Capacity and (time + gene.service_time) <= gene.due_time) {
-
             if (time < gene.ready_time) {
                 time = gene.ready_time;
             }
@@ -103,6 +104,7 @@ Cost cost_function(vector<int> chromosome) {
         else {
 
             // going back to warehouse
+            routes.push_back(i);
             num_vehicles++;
             time = 0;
             demand = 0;
@@ -115,9 +117,54 @@ Cost cost_function(vector<int> chromosome) {
     }
 
     float fitness = Num_Customers * num_vehicles + 0.001 * (dist);
-    Cost cost(num_vehicles, dist, fitness);
+    Cost cost(num_vehicles, dist, fitness,routes);
 
     return cost;
+}
+
+void Crossover(vector<vector<int>>population){
+    cout<<"population size: "<<population.size()<<endl;
+     random_device rd; // obtain a random number from hardware
+     mt19937 gen(rd()); // seed the generator
+     uniform_int_distribution<> distr(0, population.size()-1);
+     //parents
+     int father = distr(gen);
+     int mother = distr(gen);
+     while(father==mother) mother = distr(gen);
+     cout<<"random number " <<father<<" "<<mother<<endl;
+
+     Cost x = cost_function(population[father]);
+     Cost y = cost_function(population[mother]);
+     unordered_map<int,vector<int>>index_map;    // gene -> father index, mother index
+     for(int i=0;i<population[father].size();i++){
+        index_map[population[father][i]].push_back(i);
+     }
+     for(int i=0;i<population[mother].size();i++){
+        index_map[population[mother][i]].push_back(i);
+     }
+
+     vector<int>delete_element[2];
+
+     random_device rnd;
+     mt19937 genr(rnd());
+     uniform_int_distribution<> distri(0,population[father].size()-1);
+     int rf = distr(genr);
+     int rm = distr(genr);
+     //cout<<"random_device "<<rm<<" " <<rf;
+
+     //for(int i=0;i<)
+     
+
+     cout<<"population ";
+     for(int i=0;i<population[father].size();i++) cout<<population[father][i]<<" ";
+        cout<<endl;
+     vector<int>vec = x.routes;
+     cout<<"routes ";
+     for(int i=0;i<vec.size();i++) cout<<vec[i]<<" ";
+        cout<<endl;
+    cout<<"num_vehicles "<<x.num_vehicles<<endl;
+
+
 }
 
 int main() {
@@ -133,6 +180,7 @@ int main() {
         auto  cost = cost_function(init_pop[i]);
         cout << cost.num_vehicles << " " << cost.dist << " " << cost.fitness << endl;
     }
+    Crossover(init_pop);
 
     // for (auto v : init_pop)
     // {
